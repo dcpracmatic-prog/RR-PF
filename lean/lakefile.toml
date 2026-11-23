@@ -1,0 +1,16 @@
+name = "RRPF"
+version = "3.1.0"
+keywords = ["math", "interval", "verification"]
+defaultTargets = ["RRPF"]
+
+[leanOptions]
+pp.unicode.fun = true
+autoImplicit = false
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
+rev = "v4.14.0"
+
+[[lean_lib]]
+name = "RRPF"
