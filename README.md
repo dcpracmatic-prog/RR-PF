@@ -1,5 +1,7 @@
 # RR-PF
 
+[![CI](https://github.com/dcpracmatic-prog/RR-PF/actions/workflows/ci.yml/badge.svg)](https://github.com/dcpracmatic-prog/RR-PF/actions/workflows/ci.yml)
+
 Exact rational numbers and rational intervals that enclose them, with a
 `Fraction`-based test oracle and a Lean 4 model of the interval arithmetic.
 
