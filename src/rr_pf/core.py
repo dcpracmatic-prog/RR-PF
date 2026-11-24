@@ -142,8 +142,14 @@ class MNE:
         return self._lo, self._hi
 
     def contains(self, value) -> bool:
-        v = as_fraction(value) if not isinstance(value, MNE) else value.center
-        return self._lo <= v <= self._hi
+        # Real containment. For a scalar (or an exact value) this is the
+        # endpoint check lo <= v <= hi. For an interval argument, checking
+        # only its center is wrong: an interval can be centered inside
+        # while sticking out on either side. The whole interval must lie
+        # inside: lo <= value._lo and value._hi <= hi.
+        if isinstance(value, MNE):
+            return self._lo <= value._lo and value._hi <= self._hi
+        return self._lo <= as_fraction(value) <= self._hi
 
     def __add__(self, other):
         other = other if isinstance(other, MNE) else MNE(other)
@@ -176,6 +182,14 @@ class MNE:
         reciprocals = (1 / other._lo, 1 / other._hi)
         reciprocal = self._from_bounds(min(reciprocals), max(reciprocals))
         return self * reciprocal
+
+    def __rtruediv__(self, other):
+        # Reflected division: `1 / MNE(2)`, `Fraction(1, 3) / MNE(2)`.
+        # Without this, only MNE-on-the-left divided; anything on the
+        # left raised TypeError even though __radd__/__rmul__/__rsub__
+        # already exist. Delegates to __truediv__, so a divisor whose
+        # interval contains zero still raises ZeroDivisionError.
+        return MNE(other) / self
 
     @staticmethod
     def _sqrt_bounds(value, digits):
@@ -211,6 +225,19 @@ class MNE:
             return self.exact is not None and self.exact == as_fraction(other)
         except Exception:
             return NotImplemented
+
+    def __hash__(self):
+        # Defining __eq__ without __hash__ made MNE unhashable
+        # (Python sets __hash__ to None), so values could not be used
+        # in sets or as dict keys. The hash must agree with __eq__:
+        # an exact value hashes like the Fraction it equals, so
+        # hash(MNE(1, 3)) == hash(Fraction(1, 3)) and equal values
+        # stay interchangeable as keys; an interval (never equal to
+        # a non-MNE) hashes from its bounds, which is what __eq__
+        # compares for two intervals.
+        if self.exact is not None:
+            return hash(self.exact)
+        return hash((self._lo, self._hi))
 
     def __str__(self):
         if self.exact is not None:

@@ -36,7 +36,7 @@ operation, so each Lean theorem also covers the Python computation on rationals.
 | `RInterval.toBN_add` | `add` gives `val` sum and `bound` sum, exactly | `__add__` |
 | `RInterval.toBN_sub` | `sub` gives `val` difference and `bound` sum, exactly | `__sub__` (as `self + (-other)`) |
 | `RInterval.mul_hull_sound` | Python product endpoints lie in `[val - bound, val + bound]` of `BoundedNum.mul` | `__mul__` |
-| `RInterval.div_hull_sound` | Python quotient endpoints lie in `[val - bound, val + bound]` of `BoundedNum.div` | `__truediv__` |
+| `RInterval.div_hull_sound` | Python quotient endpoints lie in `[val - bound, val + bound]` of `BoundedNum.div` | `__truediv__` (and `__rtruediv__`, same division with operands swapped) |
 | `BoundedNum.add_valid`, `mul_valid`, `sub_valid`, `div_valid` | the `isValid` propagation theorems | used by the two `_sound` theorems |
 
 ### Direction of each claim
@@ -81,7 +81,13 @@ tests. If you change one side, change the other and rerun the tests.
 
 - `MNE.sqrt`, `MNE.parse`, `MNE.from_float`, and the decimal reading of `MNE(0.1)`.
   None of these are modelled in Lean. `sqrt` has its own rounding logic.
-- The Python `__eq__` for a non-degenerate interval, `__str__`, `__repr__`.
+- The Python `__eq__` for a non-degenerate interval, `__str__`, `__repr__`,
+  and `__hash__` (hash consistency with `__eq__` is a Python-side property,
+  tested in `tests/test_core.py`, not a Lean statement).
+- `contains(x)` with an interval argument `x`: it means the whole interval
+  `x` is inside (subset), not just its center. The Lean `mem_iff` statement
+  is the pointwise case (a single `t`); the subset reading for interval
+  arguments is Python-only and tested in `tests/test_core.py`.
 - Floating point. `MNE(x)` accepts a float by its decimal representation
   (`MNE(0.1)` is 1/10). `MNE.from_float(x)` uses the exact binary value of `x`.
   The Lean model covers exact rationals only, and `oracle.exact` rejects floats.
