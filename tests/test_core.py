@@ -74,6 +74,60 @@ def test_suma_larga_exacta():
     assert abs(s - 1000.0) > 0
 
 
+def test_rtruediv():
+    # Sin __rtruediv__, `1 / MNE(2)` lanzaba TypeError aunque
+    # __radd__/__rmul__/__rsub__ ya existian.
+    assert (1 / MNE(2)).exact == Fraction(1, 2)
+    assert (Fraction(1, 3) / MNE(2)).exact == Fraction(1, 6)
+    assert (2 / MNE(Fraction(1, 3))).exact == 6
+    assert (MNE(1) / MNE(2)).exact == Fraction(1, 2)
+    # Divisor intervalo: el reciproco acota el valor real.
+    lo, hi = (1 / MNE(2, Fraction(1, 10))).bounds()
+    assert lo <= Fraction(1, 2) <= hi
+    # Divisor que contiene cero sigue lanzando ZeroDivisionError.
+    try:
+        1 / MNE(0, Fraction(1, 10))
+    except ZeroDivisionError:
+        pass
+    else:
+        raise AssertionError("debió lanzar ZeroDivisionError")
+
+
+def test_hash_consistent_with_eq():
+    # Definir __eq__ sin __hash__ dejaba MNE sin hash (unhashable):
+    # ni set ni dict lo aceptaban.
+    assert hash(MNE(Fraction(1, 3))) == hash(Fraction(1, 3))
+    assert hash(MNE(1)) == hash(1) == hash(Fraction(1, 1))
+    assert hash(MNE(Fraction(1, 3))) == hash(MNE.parse("0.[3]"))
+    # Valores iguales son intercambiables como claves/miembros.
+    assert len({MNE(Fraction(1, 3)), Fraction(1, 3), MNE.parse("0.[3]")}) == 1
+    d = {MNE(2): "dos"}
+    assert d[Fraction(2, 1)] == "dos"
+    # Intervalos: el hash va por sus cotas, como __eq__.
+    a = MNE(0, Fraction(1, 10))
+    b = MNE(0, Fraction(1, 10))
+    assert hash(a) == hash(b) and len({a, b}) == 1
+    assert len({a, MNE(0)}) == 2
+
+
+def test_contains_real():
+    outer = MNE(0, Fraction(1, 10))  # [-1/10, 1/10]
+    # Escalares: extremos incluidos, fuera excluido (sin cambio).
+    assert outer.contains(Fraction(1, 10))
+    assert outer.contains(Fraction(-1, 10))
+    assert not outer.contains(Fraction(1, 5))
+    # Intervalo entero dentro.
+    assert outer.contains(MNE(0, Fraction(1, 100)))
+    assert outer.contains(MNE(Fraction(1, 20), Fraction(1, 20)))  # [0, 1/10]
+    # Centrado dentro pero sobresaliendo: el codigo anterior decia True
+    # porque solo miraba el centro; la contencion real es False.
+    assert not outer.contains(MNE(0, Fraction(1, 5)))
+    assert not outer.contains(MNE(Fraction(1, 20), Fraction(1, 5)))
+    # Valor exacto como argumento intervalo.
+    assert outer.contains(MNE(Fraction(1, 20)))
+    assert not outer.contains(MNE(Fraction(1, 5)))
+
+
 def test_errores():
     try:
         MNE(1) / MNE(0, Fraction(1, 10))
