@@ -32,7 +32,7 @@ jobs:
         run: pytest -q
 
   lean:
-    name: lake build (Lean v4.14.0)
+    name: lake build + axiom audit (Lean v4.14.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,3 +42,23 @@ jobs:
         with:
           lake-package-directory: lean
           build: true
+
+      - name: Reject sorry in build output
+        working-directory: lean
+        run: |
+          lake build 2>&1 | tee build.log
+          if grep -q "declaration uses 'sorry'" build.log; then
+            echo "sorry found in build"; exit 1
+          fi
+
+      - name: Axiom audit
+        working-directory: lean
+        run: |
+          lake env lean Check.lean | tee axioms.txt
+          if grep -q sorryAx axioms.txt; then
+            echo "sorryAx found"; exit 1
+          fi
+          test "$(grep -c 'depends on axioms' axioms.txt)" -eq 22
+
+      - name: Lean cases are up to date with the Python generator
+        run: python3 tools/export_cases.py --check

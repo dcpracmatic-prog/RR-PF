@@ -150,3 +150,27 @@ if __name__ == "__main__":
         fn()
         print(f"PASS {name}")
     print(f"{len(tests)} pruebas en verde")
+
+
+def test_sqrt_validacion():
+    import pytest
+    with pytest.raises(ValueError):
+        MNE(-1).sqrt()                              # negativo exacto
+    with pytest.raises(ValueError):
+        MNE(2).sqrt(digits=-1)                      # dígitos negativos
+    with pytest.raises(ValueError):
+        MNE(2).sqrt(digits=1.5)                     # dígitos no enteros
+    with pytest.raises(ValueError):
+        MNE(0, Fraction(1, 10)).sqrt()              # intervalo con valores negativos
+    lo, hi = MNE(Fraction(1, 2), Fraction(1, 3)).sqrt(10).bounds()
+    assert lo >= 0 and lo * lo <= Fraction(1, 6) and hi * hi >= Fraction(5, 6)
+
+
+def test_from_float_denominador_potencia_de_dos():
+    for x in [0.1, 3.0, -2.5, 0.0, 1e-300, 2.0**60]:
+        m = MNE.from_float(x)
+        assert m.exact == Fraction(x)
+        den = m.exact.denominator
+        assert den & (den - 1) == 0                 # potencia de dos
+        lo, hi = m.bounds()
+        assert lo == hi == Fraction(x)              # ancho cero

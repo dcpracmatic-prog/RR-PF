@@ -52,7 +52,15 @@ El formalismo está en [`lean/`](lean/). Define números acotados
 - `RInterval.toBN_add`, `toBN_sub`: la suma y la resta de estilo Python
   corresponden exactamente;
 - `RInterval.mul_hull_sound`, `div_hull_sound`: los resultados de multiplicar
-  y dividir de estilo Python caen dentro de la envolvente de Lean.
+  y dividir de estilo Python caen dentro de la envolvente de Lean;
+- `RRPF.Sqrt.pySqrt_enclosure`: el `sqrt` de Python sobre un intervalo envuelve
+  a `√x` para cada `x` del intervalo; `RRPF.Literals.periodic_closed`: la forma
+  cerrada de un decimal periódico; `RRPF.Literals.den_dyadic_pow_two`: los
+  denominadores de `from_float` son potencias de dos.
+
+`lean/RRPF/Cases.lean` lo genera `tools/export_cases.py` y comprueba 89
+resultados de Python contra la especificación en Lean. El CI falla si el
+archivo versionado difiere de la salida del generador.
 
 Sin `sorry`. Cada teorema depende solo de `propext`, `Classical.choice` y
 `Quot.sound`.
@@ -68,9 +76,9 @@ pip install ".[test]"
 pytest -q
 ```
 
-La suite tiene 29 pruebas. Cubren la aritmética básica, el oráculo y una
-comprobación aleatoria (semilla fija) de correspondencia entre el código
-Python y las fórmulas de Lean.
+La suite tiene 44 pruebas. Cubren la aritmética básica, el oráculo, el
+generador de casos de Lean y una comprobación aleatoria (semilla fija) de
+correspondencia entre el código Python y las fórmulas de Lean.
 
 La suite del oráculo incluye un mutante que descarta términos pequeños. La
 comparación float contra float no lo detecta para algunos tamaños; el oráculo
@@ -88,7 +96,9 @@ Toolchain: `leanprover/lean4:v4.14.0`, Mathlib `v4.14.0`.
 
 ## Integración continua
 
-`.github/workflows/ci.yml` ejecuta `pytest` en Python y `lake build` en Lean.
+`.github/workflows/ci.yml` ejecuta `pytest` en Python y `lake build` en Lean,
+verifica la lista de axiomas de los teoremas clave y comprueba que los casos
+de Lean generados están al día.
 
 ## Licencia
 
