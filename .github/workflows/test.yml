@@ -36,7 +36,7 @@ jobs:
     environment: release  # debe coincidir EXACTO con "Environment name" en pypi.org/manage/.../publishing/
     permissions:
       contents: read
-      id-token: pypi # OIDC para PyPI Trusted Publishing (pending publisher: rr-pf / test.yml, environment: release)
+      id-token: write # OIDC para PyPI Trusted Publishing (pending publisher: rr-pf / test.yml, environment: release)
 
     steps:
       - uses: actions/checkout@v5

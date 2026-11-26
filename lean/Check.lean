@@ -16,3 +16,11 @@ import RRPF
 #print axioms RRPF.RInterval.toBN_sub
 #print axioms RRPF.RInterval.mul_hull_sound
 #print axioms RRPF.RInterval.div_hull_sound
+#print axioms RRPF.Sqrt.enclosure_of_sq
+#print axioms RRPF.Sqrt.pySqrt_enclosure
+#print axioms RRPF.Sqrt.sqrt_cert
+#print axioms RRPF.Sqrt.sqrt_interval_cert
+#print axioms RRPF.Sqrt.exactRoot_sound
+#print axioms RRPF.Literals.periodic_closed
+#print axioms RRPF.Literals.periodic_series
+#print axioms RRPF.Literals.den_dyadic_pow_two

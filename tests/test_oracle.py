@@ -12,7 +12,7 @@ from decimal import Decimal
 
 import pytest
 
-from rr_pf import MNE, ExactCSR, csr_matvec_exact
+from rr_pf import MNE, ExactCSR, csr_matvec_exact, kahan_sum
 from rr_pf.oracle import exact
 
 
@@ -144,3 +144,93 @@ def test_mutante_de_indice_lo_detectan_ambos():
     shifted = [Fraction(1 + 2), Fraction(3 + 4)]
     wrong = [Fraction(1 + 1), Fraction(3 + 3)]  # columna desplazada
     assert correct != wrong and correct == shifted
+
+
+# ---------- spmm: exact A @ B, column by column ---------------------------
+
+from rr_pf.oracle import check_bounds, assert_within_bounds  # noqa: E402
+
+
+def test_spmm_producto_pequeno_exacto():
+    A = ExactCSR.from_dense([[1, "1/2"], [0, 3]])
+    B = [[2, "1/3"], [4, "1/5"]]
+    assert A.spmm(B) == [
+        [Fraction(4), Fraction(13, 30)],
+        [Fraction(12), Fraction(3, 5)],
+    ]
+
+
+def test_spmm_columna_a_columna_es_matvec():
+    A = ExactCSR.from_dense([["1/3", 0, 2], [0, "0.1", "1/7"], [5, 0, 0]])
+    B = [[3, "1/2", 0], [2, 1, "-4/3"], ["1/5", 7, "9"]]
+    Y = A.spmm(B)
+    for j in range(3):
+        col = [B[i][j] for i in range(3)]
+        assert [Y[i][j] for i in range(3)] == A.matvec(col)
+
+
+def test_spmm_vacio():
+    Z = ExactCSR.from_dense([[0, 0], [0, 0]])
+    assert Z.spmm([[1, 2], [3, 4]]) == [[0, 0], [0, 0]]
+    assert ExactCSR.from_dense([]).spmm([]) == []
+
+
+def test_spmm_validacion_y_float_en_b():
+    A = ExactCSR.from_dense([[1, 2]])
+    with pytest.raises(ValueError):
+        A.spmm([[1], [2], [3]])          # B con filas de más
+    with pytest.raises(ValueError):
+        A.spmm([[1, 2], [3]])            # B irregular
+    with pytest.raises(TypeError):
+        ExactCSR.from_dense([[1]]).spmm([[0.5]])  # float en B
+
+
+# ---------- bound checker ------------------------------------------------
+
+def test_check_bounds_frontera_inclusiva():
+    expected = [[Fraction(0)]]
+    # error exactamente igual a la cota: dentro (<=)
+    assert check_bounds([[Fraction(1, 2)]], expected, "1/2") == []
+    # error un poco mayor: fuera
+    bad = check_bounds([["0.5000000000001"]], expected, "1/2")
+    assert len(bad) == 1 and (bad[0].row, bad[0].col) == (0, 0)
+    assert bad[0].error == Fraction("0.5000000000001")
+    # la cota no puede ser float
+    with pytest.raises(TypeError):
+        check_bounds([[0]], expected, 1e-9)
+
+
+def test_check_bounds_float_binario_y_nan():
+    expected = [[Fraction(1, 10)]]
+    # float se lee como valor binario: Fraction(0.1) - 1/10 ~ 5.55e-18
+    assert check_bounds([[0.1]], expected, Fraction(1, 10**18)) != []
+    assert check_bounds([[0.1]], expected, Fraction(1, 10**17)) == []
+    # NaN no tiene error finito: se marca con error None
+    nan = check_bounds([[float("nan")]], expected, 1)
+    assert len(nan) == 1 and nan[0].error is None
+
+
+# ---------- mutants the oracle catches -----------------------------------
+
+def test_cancelacion_float_ciega_oraculo_no():
+    # [1e16, 1, -1e16] . [1, 1, 1] = 1. In float, 1e16 + 1.0 rounds back to 1e16.
+    indptr, indices = [0, 3], [0, 1, 2]
+    ref_f = float_matvec(indptr, indices, [1e16, 1.0, -1e16], [1.0, 1.0, 1.0])
+    assert ref_f == [0.0]          # referencia float: también ciega
+    exact_y = csr_matvec_exact((1, 3), indptr, indices, [10**16, 1, -10**16],
+                               [1, 1, 1])
+    assert exact_y == [Fraction(1)]
+    assert kahan_sum([1e16, 1.0, -1e16]).exact == 1
+
+
+def test_mutante_b_transpuesta_lo_caza_con_cota_cero():
+    A = [[1, 2], [3, 4]]
+    B = [[1, 5], [6, 7]]
+    correct = ExactCSR.from_dense(A).spmm(B)
+    assert correct == [[13, 19], [27, 43]]
+    # MUTANTE: usa B transpuesta
+    Bt = [[B[j][i] for j in range(2)] for i in range(2)]
+    mutant = ExactCSR.from_dense(A).spmm(Bt)
+    assert_within_bounds(correct, correct, 0)
+    with pytest.raises(AssertionError):
+        assert_within_bounds(mutant, correct, 0)
