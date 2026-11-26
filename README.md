@@ -12,9 +12,15 @@ The main class is still called `MNE` for API stability.
 ## Install
 
 ```bash
-pip install .            # from a clone
-pip install ".[test]"    # with pytest
+pip install rr-pf             # from PyPI, once the trusted publisher is live
+pip install .                 # from a clone
+pip install ".[test]"         # from a clone, with pytest
 ```
+
+PyPI publishing uses a tag-triggered, OIDC-based trusted publisher (no
+stored token). Until that publisher is registered on pypi.org for this
+repo, `pip install rr-pf` will not resolve yet — install from a clone
+in the meantime.
 
 ## Usage
 
@@ -67,7 +73,7 @@ pip install ".[test]"
 pytest -q
 ```
 
-The suite has 29 tests. They cover the core arithmetic, the oracle, and a
+The suite has 32 tests. They cover the core arithmetic, the oracle, and a
 randomized correspondence check between the Python code and the Lean
 formulas (fixed seed).
 
@@ -86,7 +92,12 @@ Toolchain: `leanprover/lean4:v4.14.0`, Mathlib `v4.14.0`.
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs `pytest` on Python and `lake build` on Lean.
+- `.github/workflows/ci.yml` runs `pytest` on Python 3.10/3.12 and
+  `lake build` on Lean.
+- `.github/workflows/test.yml` runs `pytest` on 3.12 again, then, only on
+  a `v*` tag or a manual dispatch, builds and publishes to PyPI via a
+  trusted publisher (OIDC, GitHub environment `release`). No API token
+  is stored in this repo.
 
 ## Languages
 
