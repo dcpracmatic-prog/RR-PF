@@ -3,4 +3,4 @@ from .core import MNE, as_fraction, kahan_sum
 from .oracle import ExactCSR, csr_matvec_exact
 
 __all__ = ["MNE", "as_fraction", "kahan_sum", "ExactCSR", "csr_matvec_exact"]
-__version__ = "3.1.0"
+__version__ = "3.1.1"
