@@ -17,8 +17,9 @@ pip install .                 # from a clone
 pip install ".[test]"         # from a clone, with pytest
 ```
 
-Release 3.1.0 was uploaded to PyPI with an API token. Later releases are
-meant to go through the tag-triggered trusted publisher in `test.yml`.
+Releases are published to PyPI by `.github/workflows/ci.yml` when a `v*` tag
+is pushed (trusted publishing, no API token). 3.1.0 was uploaded by hand
+before that workflow existed.
 
 ## Usage
 
@@ -101,10 +102,14 @@ Toolchain: `leanprover/lean4:v4.14.0`, Mathlib `v4.14.0`.
 `.github/workflows/ci.yml` runs `pytest` on Python and `lake build` on Lean,
 checks the axiom list of the key theorems, and checks that the generated Lean
 cases are up to date.
-- `.github/workflows/test.yml` runs `pytest` on 3.12 again, then, only on
-  a `v*` tag or a manual dispatch, builds and publishes to PyPI via a
-  trusted publisher (OIDC, GitHub environment `release`). No API token
-  is stored in this repo.
+- The `publish` job runs only on a `v*` tag, after the Python and Lean jobs
+  pass. It builds the sdist and wheel and publishes them to PyPI via a
+  trusted publisher (OIDC, GitHub environment `release`, which requires
+  approval). No API token is stored in this repo.
+
+To release: bump `version` in `pyproject.toml` and `__version__` in
+`src/rr_pf/__init__.py`, merge to `main`, then tag the merge commit
+`vX.Y.Z` and push the tag. The tag must match the package version.
 
 ## Languages
 
