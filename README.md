@@ -1,13 +1,14 @@
 # RR-PF
-
-[![CI](https://github.com/dcpracmatic-prog/RR-PF/actions/workflows/ci.yml/badge.svg)](https://github.com/dcpracmatic-prog/RR-PF/actions/workflows/ci.yml)
-[![Dependency Graph](https://github.com/dcpracmatic-prog/RR-PF/actions/workflows/dependabot/update-graph/badge.svg)](https://github.com/dcpracmatic-prog/RR-PF/actions/workflows/dependabot/update-graph)
-
 Exact rational numbers and rational intervals that enclose them, with a
 `Fraction`-based test oracle and a Lean 4 model of the interval arithmetic.
 
-Formerly published as `mne`; renamed because that name is taken on PyPI.
-The main class is still called `MNE` for API stability.
+
+[![PyPI version](https://img.shields.io/pypi/v/rr-pf.svg)](https://pypi.org/project/rr-pf/)
+[![Dependency Graph](https://github.com/dcpracmatic-prog/RR-PF/actions/workflows/dependabot/update-graph/badge.svg)](https://github.com/dcpracmatic-prog/RR-PF/actions/workflows/dependabot/update-graph)
+[![CI](https://github.com/dcpracmatic-prog/RR-PF/actions/workflows/ci.yml/badge.svg)](https://github.com/dcpracmatic-prog/RR-PF/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
+
 
 ## Install
 
